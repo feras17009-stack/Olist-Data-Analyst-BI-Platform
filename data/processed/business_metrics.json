@@ -1,0 +1,16 @@
+{
+    "total_revenue": 15843553.24,
+    "total_product_revenue": 13591643.7,
+    "total_freight_value": 2251909.54,
+    "total_orders": 99441,
+    "delivered_orders": 96478,
+    "total_customers": 96096,
+    "average_order_value": 159.33,
+    "items_per_order": 1.13,
+    "repeat_customers_count": 6190,
+    "repeat_customer_rate_pct": 6.22,
+    "average_delivery_days": 12.6,
+    "late_delivery_count": 7826,
+    "late_delivery_rate_pct": 8.11,
+    "average_review_score": 4.09
+}

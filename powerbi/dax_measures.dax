@@ -1,0 +1,229 @@
+// ============================================================================
+// DAX MEASURES CATALOGUE — OLIST E-COMMERCE BUSINESS INTELLIGENCE
+// Grouped by business domain with complete syntax and business rationale
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. CORE FINANCIAL & SALES METRICS
+// ----------------------------------------------------------------------------
+
+[Total Revenue] = 
+SUM(analytics_fact_sales[item_value])
+
+[Product Revenue] = 
+SUM(analytics_fact_sales[price])
+
+[Freight Revenue] = 
+SUM(analytics_fact_sales[freight_value])
+
+[Total Orders] = 
+DISTINCTCOUNT(analytics_fact_orders[order_id])
+
+[Delivered Orders] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_fact_orders[order_id]),
+    analytics_fact_orders[order_status] = "delivered"
+)
+
+[Canceled Orders] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_fact_orders[order_id]),
+    analytics_fact_orders[order_status] = "canceled"
+)
+
+[Cancellation Rate %] = 
+DIVIDE([Canceled Orders], [Total Orders], 0)
+
+[Average Order Value] = 
+DIVIDE([Total Revenue], [Total Orders], 0)
+
+[Average Item Price] = 
+DIVIDE([Product Revenue], COUNT(analytics_fact_sales[sales_key]), 0)
+
+[Total Units Sold] = 
+COUNT(analytics_fact_sales[sales_key])
+
+[Items Per Order] = 
+DIVIDE([Total Units Sold], [Total Orders], 0)
+
+[Freight Share %] = 
+DIVIDE([Freight Revenue], [Total Revenue], 0)
+
+
+// ----------------------------------------------------------------------------
+// 2. TIME INTELLIGENCE & MOM / YOY GROWTH
+// ----------------------------------------------------------------------------
+
+[Prior Month Revenue] = 
+CALCULATE(
+    [Total Revenue],
+    DATEADD(analytics_dim_date[full_date], -1, MONTH)
+)
+
+[Revenue MoM Growth %] = 
+DIVIDE(
+    [Total Revenue] - [Prior Month Revenue],
+    [Prior Month Revenue],
+    0
+)
+
+[Prior Month Orders] = 
+CALCULATE(
+    [Total Orders],
+    DATEADD(analytics_dim_date[full_date], -1, MONTH)
+)
+
+[Orders MoM Growth %] = 
+DIVIDE(
+    [Total Orders] - [Prior Month Orders],
+    [Prior Month Orders],
+    0
+)
+
+[Revenue YTD] = 
+TOTALYTD(
+    [Total Revenue],
+    analytics_dim_date[full_date]
+)
+
+[Revenue QTD] = 
+TOTALQTD(
+    [Total Revenue],
+    analytics_dim_date[full_date]
+)
+
+[Prior Year Revenue] = 
+CALCULATE(
+    [Total Revenue],
+    SAMEPERIODLASTYEAR(analytics_dim_date[full_date])
+)
+
+[Revenue YoY Growth %] = 
+DIVIDE(
+    [Total Revenue] - [Prior Year Revenue],
+    [Prior Year Revenue],
+    0
+)
+
+
+// ----------------------------------------------------------------------------
+// 3. CUSTOMER ANALYTICS & RFM SEGMENTATION
+// ----------------------------------------------------------------------------
+
+[Total Unique Customers] = 
+DISTINCTCOUNT(analytics_dim_customer[customer_unique_id])
+
+[Repeat Customers] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_dim_customer[customer_unique_id]),
+    analytics_dim_customer[is_repeat_customer] = 1
+)
+
+[Single Purchase Customers] = 
+[Total Unique Customers] - [Repeat Customers]
+
+[Repeat Customer Rate %] = 
+DIVIDE([Repeat Customers], [Total Unique Customers], 0)
+
+[Revenue per Customer] = 
+DIVIDE([Total Revenue], [Total Unique Customers], 0)
+
+[Champions Customer Count] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_dim_customer[customer_unique_id]),
+    analytics_dim_customer[rfm_segment] = "Champions"
+)
+
+[At Risk Customer Count] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_dim_customer[customer_unique_id]),
+    analytics_dim_customer[rfm_segment] = "At Risk"
+)
+
+[Potential Loyalists Revenue] = 
+CALCULATE(
+    [Total Revenue],
+    analytics_dim_customer[rfm_segment] = "Potential Loyalists"
+)
+
+
+// ----------------------------------------------------------------------------
+// 4. OPERATIONS & DELIVERY SLA METRICS
+// ----------------------------------------------------------------------------
+
+[Average Delivery Days] = 
+CALCULATE(
+    AVERAGE(analytics_fact_orders[delivery_days]),
+    analytics_fact_orders[order_status] = "delivered"
+)
+
+[Average Estimated Delivery Days] = 
+CALCULATE(
+    AVERAGE(analytics_fact_orders[estimated_delivery_days]),
+    analytics_fact_orders[order_status] = "delivered"
+)
+
+[Late Delivered Orders] = 
+CALCULATE(
+    DISTINCTCOUNT(analytics_fact_orders[order_id]),
+    analytics_fact_orders[order_status] = "delivered",
+    analytics_fact_orders[is_late] = 1
+)
+
+[On-Time Delivered Orders] = 
+[Delivered Orders] - [Late Delivered Orders]
+
+[Late Delivery %] = 
+DIVIDE([Late Delivered Orders], [Delivered Orders], 0)
+
+[On-Time Delivery %] = 
+DIVIDE([On-Time Delivered Orders], [Delivered Orders], 0)
+
+[Average Delivery Delay Variance] = 
+CALCULATE(
+    AVERAGE(analytics_fact_orders[delay_days]),
+    analytics_fact_orders[order_status] = "delivered"
+)
+
+
+// ----------------------------------------------------------------------------
+// 5. CUSTOMER EXPERIENCE & REVIEW CSAT
+// ----------------------------------------------------------------------------
+
+[Average Review Score] = 
+AVERAGE(analytics_fact_reviews[review_score])
+
+[5 Star Reviews Count] = 
+CALCULATE(
+    COUNT(analytics_fact_reviews[review_record_key]),
+    analytics_fact_reviews[review_score] = 5
+)
+
+[1 Star Reviews Count] = 
+CALCULATE(
+    COUNT(analytics_fact_reviews[review_record_key]),
+    analytics_fact_reviews[review_score] = 1
+)
+
+[Total Reviews] = 
+COUNT(analytics_fact_reviews[review_record_key])
+
+[5 Star Review %] = 
+DIVIDE([5 Star Reviews Count], [Total Reviews], 0)
+
+[1 Star Review %] = 
+DIVIDE([1 Star Reviews Count], [Total Reviews], 0)
+
+[Positive Review CSAT %] = 
+DIVIDE(
+    CALCULATE(COUNT(analytics_fact_reviews[review_record_key]), analytics_fact_reviews[review_score] >= 4),
+    [Total Reviews],
+    0
+)
+
+[Reviews with Comment %] = 
+DIVIDE(
+    CALCULATE(COUNT(analytics_fact_reviews[review_record_key]), analytics_fact_reviews[has_comment] = 1),
+    [Total Reviews],
+    0
+)
